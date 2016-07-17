@@ -1,7 +1,7 @@
 # pg_dbwa extension
 
 comment = 'PostgreSQL Database workload analizer'
-default_version = 0.1
+default_version = 0.2
 
 requires = 'dblink, pg_stat_statements, pg_eyes, pg_prttn_tools'
 
