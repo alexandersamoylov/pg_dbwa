@@ -1,0 +1,1455 @@
+pg_dbwa test
+Вс сен 25 21:34:22 MSK 2016
+
+test_version=0.3.1
+test_prev_version=0.3
+test_dbname_new=pg_dbwa_test_new
+test_dbname_upd=pg_dbwa_test_upd
+v_psql_cmd=psql
+v_pgbench_cmd=pgbench
+
+test_db_drop: pg_dbwa_test_new
+
+DROP DATABASE IF EXISTS pg_dbwa_test_new;
+DROP DATABASE
+
+test_db_create: pg_dbwa_test_new
+
+CREATE DATABASE pg_dbwa_test_new OWNER = postgres;
+CREATE DATABASE
+
+test_ext_create: pg_dbwa_test_new dblink
+
+CREATE EXTENSION dblink;
+CREATE EXTENSION
+
+test_ext_create: pg_dbwa_test_new pg_stat_statements
+
+CREATE EXTENSION pg_stat_statements;
+CREATE EXTENSION
+
+test_ext_create: pg_dbwa_test_new pg_eyes
+
+CREATE EXTENSION pg_eyes;
+CREATE EXTENSION
+
+test_ext_create: pg_dbwa_test_new pg_prttn_tools
+
+CREATE EXTENSION pg_prttn_tools;
+CREATE EXTENSION
+
+test_ext_create: pg_dbwa_test_new pg_dbwa
+
+CREATE EXTENSION pg_dbwa;
+CREATE EXTENSION
+
+test_ext_check: pg_dbwa_test_new pg_dbwa 0.3.1
+
+EXIST
+
+test_pg_dbwa_settings_check: pg_dbwa_test_new local
+
+SELECT *
+FROM dbwa.cluster_config
+WHERE clustername = 'local';
+ clusterid | clustername |   rhost   | rport | rdbname | rusername | rpassword | enabled 
+-----------+-------------+-----------+-------+---------+-----------+-----------+---------
+         1 | local       | localhost | 5432  | dbname  | username  | password  | Y
+(1 row)
+
+SELECT co.*
+FROM dbwa.cluster_operation co
+LEFT JOIN dbwa.cluster_config cc ON co.clusterid = cc.clusterid
+WHERE cc.clustername = 'local';
+ opid | clusterid |      operation      | statopid | statop_time | statop_status | enabled 
+------+-----------+---------------------+----------+-------------+---------------+---------
+    1 |         1 | dbwa.get_statements |          |             |               | Y
+(1 row)
+
+
+test_pg_dbwa_settings_cluster_add: pg_dbwa_test_new rlocal
+
+DO $$
+DECLARE
+
+    v_clusterid dbwa.cluster_config.clusterid%type;
+    v_sql TEXT;
+    
+BEGIN
+    v_clusterid := nextval('dbwa.clusterid_seq');
+
+    v_sql := 'INSERT INTO dbwa.cluster_config (clusterid, clustername,
+    rhost, rport, rdbname, rusername, rpassword, enabled)
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8)';
+    EXECUTE v_sql USING v_clusterid, 'rlocal', '127.0.0.1', '5432',
+        'pg_dbwa_test_new', 'dbwa', 'dbwa', 'Y';
+
+    v_sql := 'INSERT INTO dbwa.cluster_operation (opid, clusterid, operation,
+    enabled)
+    VALUES($1, $2, $3, $4)';
+    EXECUTE v_sql USING nextval('dbwa.opid_seq'), v_clusterid,
+        'dbwa.get_statements','Y';
+
+END$$;
+DO
+
+test_pg_dbwa_settings_check: pg_dbwa_test_new rlocal
+
+SELECT *
+FROM dbwa.cluster_config
+WHERE clustername = 'rlocal';
+ clusterid | clustername |   rhost   | rport |     rdbname      | rusername | rpassword | enabled 
+-----------+-------------+-----------+-------+------------------+-----------+-----------+---------
+         2 | rlocal      | 127.0.0.1 | 5432  | pg_dbwa_test_new | dbwa      | dbwa      | Y
+(1 row)
+
+SELECT co.*
+FROM dbwa.cluster_operation co
+LEFT JOIN dbwa.cluster_config cc ON co.clusterid = cc.clusterid
+WHERE cc.clustername = 'rlocal';
+ opid | clusterid |      operation      | statopid | statop_time | statop_status | enabled 
+------+-----------+---------------------+----------+-------------+---------------+---------
+    2 |         2 | dbwa.get_statements |          |             |               | Y
+(1 row)
+
+
+test_pgbench_init: pg_dbwa_test_new 100
+
+pgbench --initialize --scale=100 pg_dbwa_test_new
+NOTICE:  table "pgbench_history" does not exist, skipping
+NOTICE:  table "pgbench_tellers" does not exist, skipping
+NOTICE:  table "pgbench_accounts" does not exist, skipping
+NOTICE:  table "pgbench_branches" does not exist, skipping
+creating tables...
+100000 of 10000000 tuples (1%) done (elapsed 0.07 s, remaining 6.76 s)
+200000 of 10000000 tuples (2%) done (elapsed 0.15 s, remaining 7.33 s)
+300000 of 10000000 tuples (3%) done (elapsed 0.23 s, remaining 7.48 s)
+400000 of 10000000 tuples (4%) done (elapsed 0.31 s, remaining 7.51 s)
+500000 of 10000000 tuples (5%) done (elapsed 0.39 s, remaining 7.50 s)
+600000 of 10000000 tuples (6%) done (elapsed 0.48 s, remaining 7.46 s)
+700000 of 10000000 tuples (7%) done (elapsed 0.56 s, remaining 7.41 s)
+800000 of 10000000 tuples (8%) done (elapsed 0.64 s, remaining 7.36 s)
+900000 of 10000000 tuples (9%) done (elapsed 0.72 s, remaining 7.29 s)
+1000000 of 10000000 tuples (10%) done (elapsed 0.80 s, remaining 7.21 s)
+1100000 of 10000000 tuples (11%) done (elapsed 0.89 s, remaining 7.17 s)
+1200000 of 10000000 tuples (12%) done (elapsed 0.97 s, remaining 7.12 s)
+1300000 of 10000000 tuples (13%) done (elapsed 1.06 s, remaining 7.06 s)
+1400000 of 10000000 tuples (14%) done (elapsed 1.13 s, remaining 6.97 s)
+1500000 of 10000000 tuples (15%) done (elapsed 1.22 s, remaining 6.91 s)
+1600000 of 10000000 tuples (16%) done (elapsed 1.30 s, remaining 6.84 s)
+1700000 of 10000000 tuples (17%) done (elapsed 1.39 s, remaining 6.78 s)
+1800000 of 10000000 tuples (18%) done (elapsed 1.47 s, remaining 6.68 s)
+1900000 of 10000000 tuples (19%) done (elapsed 1.55 s, remaining 6.61 s)
+2000000 of 10000000 tuples (20%) done (elapsed 1.64 s, remaining 6.54 s)
+2100000 of 10000000 tuples (21%) done (elapsed 1.72 s, remaining 6.47 s)
+2200000 of 10000000 tuples (22%) done (elapsed 1.80 s, remaining 6.38 s)
+2300000 of 10000000 tuples (23%) done (elapsed 1.88 s, remaining 6.31 s)
+2400000 of 10000000 tuples (24%) done (elapsed 1.97 s, remaining 6.24 s)
+2500000 of 10000000 tuples (25%) done (elapsed 2.06 s, remaining 6.17 s)
+2600000 of 10000000 tuples (26%) done (elapsed 2.14 s, remaining 6.08 s)
+2700000 of 10000000 tuples (27%) done (elapsed 2.22 s, remaining 6.00 s)
+2800000 of 10000000 tuples (28%) done (elapsed 2.30 s, remaining 5.93 s)
+2900000 of 10000000 tuples (29%) done (elapsed 2.39 s, remaining 5.85 s)
+3000000 of 10000000 tuples (30%) done (elapsed 2.47 s, remaining 5.77 s)
+3100000 of 10000000 tuples (31%) done (elapsed 2.55 s, remaining 5.68 s)
+3200000 of 10000000 tuples (32%) done (elapsed 2.64 s, remaining 5.60 s)
+3300000 of 10000000 tuples (33%) done (elapsed 2.72 s, remaining 5.52 s)
+3400000 of 10000000 tuples (34%) done (elapsed 2.81 s, remaining 5.45 s)
+3500000 of 10000000 tuples (35%) done (elapsed 2.89 s, remaining 5.37 s)
+3600000 of 10000000 tuples (36%) done (elapsed 2.97 s, remaining 5.28 s)
+3700000 of 10000000 tuples (37%) done (elapsed 3.05 s, remaining 5.20 s)
+3800000 of 10000000 tuples (38%) done (elapsed 3.14 s, remaining 5.12 s)
+3900000 of 10000000 tuples (39%) done (elapsed 3.23 s, remaining 5.04 s)
+4000000 of 10000000 tuples (40%) done (elapsed 3.31 s, remaining 4.96 s)
+4100000 of 10000000 tuples (41%) done (elapsed 3.39 s, remaining 4.88 s)
+4200000 of 10000000 tuples (42%) done (elapsed 3.47 s, remaining 4.79 s)
+4300000 of 10000000 tuples (43%) done (elapsed 3.56 s, remaining 4.71 s)
+4400000 of 10000000 tuples (44%) done (elapsed 3.64 s, remaining 4.63 s)
+4500000 of 10000000 tuples (45%) done (elapsed 3.73 s, remaining 4.55 s)
+4600000 of 10000000 tuples (46%) done (elapsed 3.81 s, remaining 4.47 s)
+4700000 of 10000000 tuples (47%) done (elapsed 3.89 s, remaining 4.39 s)
+4800000 of 10000000 tuples (48%) done (elapsed 3.98 s, remaining 4.31 s)
+4900000 of 10000000 tuples (49%) done (elapsed 4.06 s, remaining 4.23 s)
+5000000 of 10000000 tuples (50%) done (elapsed 4.14 s, remaining 4.14 s)
+5100000 of 10000000 tuples (51%) done (elapsed 4.23 s, remaining 4.06 s)
+5200000 of 10000000 tuples (52%) done (elapsed 4.31 s, remaining 3.98 s)
+5300000 of 10000000 tuples (53%) done (elapsed 4.39 s, remaining 3.90 s)
+5400000 of 10000000 tuples (54%) done (elapsed 4.48 s, remaining 3.81 s)
+5500000 of 10000000 tuples (55%) done (elapsed 4.56 s, remaining 3.73 s)
+5600000 of 10000000 tuples (56%) done (elapsed 4.65 s, remaining 3.65 s)
+5700000 of 10000000 tuples (57%) done (elapsed 4.85 s, remaining 3.66 s)
+5800000 of 10000000 tuples (58%) done (elapsed 4.94 s, remaining 3.58 s)
+5900000 of 10000000 tuples (59%) done (elapsed 5.03 s, remaining 3.50 s)
+6000000 of 10000000 tuples (60%) done (elapsed 5.12 s, remaining 3.41 s)
+6100000 of 10000000 tuples (61%) done (elapsed 5.20 s, remaining 3.32 s)
+6200000 of 10000000 tuples (62%) done (elapsed 5.28 s, remaining 3.24 s)
+6300000 of 10000000 tuples (63%) done (elapsed 5.37 s, remaining 3.15 s)
+6400000 of 10000000 tuples (64%) done (elapsed 5.45 s, remaining 3.07 s)
+6500000 of 10000000 tuples (65%) done (elapsed 5.53 s, remaining 2.98 s)
+6600000 of 10000000 tuples (66%) done (elapsed 5.62 s, remaining 2.89 s)
+6700000 of 10000000 tuples (67%) done (elapsed 5.70 s, remaining 2.81 s)
+6800000 of 10000000 tuples (68%) done (elapsed 5.78 s, remaining 2.72 s)
+6900000 of 10000000 tuples (69%) done (elapsed 5.87 s, remaining 2.64 s)
+7000000 of 10000000 tuples (70%) done (elapsed 5.95 s, remaining 2.55 s)
+7100000 of 10000000 tuples (71%) done (elapsed 6.03 s, remaining 2.46 s)
+7200000 of 10000000 tuples (72%) done (elapsed 6.12 s, remaining 2.38 s)
+7300000 of 10000000 tuples (73%) done (elapsed 6.20 s, remaining 2.29 s)
+7400000 of 10000000 tuples (74%) done (elapsed 6.29 s, remaining 2.21 s)
+7500000 of 10000000 tuples (75%) done (elapsed 6.37 s, remaining 2.12 s)
+7600000 of 10000000 tuples (76%) done (elapsed 6.45 s, remaining 2.04 s)
+7700000 of 10000000 tuples (77%) done (elapsed 6.54 s, remaining 1.95 s)
+7800000 of 10000000 tuples (78%) done (elapsed 6.62 s, remaining 1.87 s)
+7900000 of 10000000 tuples (79%) done (elapsed 6.70 s, remaining 1.78 s)
+8000000 of 10000000 tuples (80%) done (elapsed 6.78 s, remaining 1.70 s)
+8100000 of 10000000 tuples (81%) done (elapsed 6.87 s, remaining 1.61 s)
+8200000 of 10000000 tuples (82%) done (elapsed 6.95 s, remaining 1.53 s)
+8300000 of 10000000 tuples (83%) done (elapsed 7.03 s, remaining 1.44 s)
+8400000 of 10000000 tuples (84%) done (elapsed 7.11 s, remaining 1.36 s)
+8500000 of 10000000 tuples (85%) done (elapsed 7.20 s, remaining 1.27 s)
+8600000 of 10000000 tuples (86%) done (elapsed 7.28 s, remaining 1.19 s)
+8700000 of 10000000 tuples (87%) done (elapsed 7.36 s, remaining 1.10 s)
+8800000 of 10000000 tuples (88%) done (elapsed 7.45 s, remaining 1.02 s)
+8900000 of 10000000 tuples (89%) done (elapsed 7.53 s, remaining 0.93 s)
+9000000 of 10000000 tuples (90%) done (elapsed 7.61 s, remaining 0.85 s)
+9100000 of 10000000 tuples (91%) done (elapsed 7.69 s, remaining 0.76 s)
+9200000 of 10000000 tuples (92%) done (elapsed 7.78 s, remaining 0.68 s)
+9300000 of 10000000 tuples (93%) done (elapsed 7.86 s, remaining 0.59 s)
+9400000 of 10000000 tuples (94%) done (elapsed 7.94 s, remaining 0.51 s)
+9500000 of 10000000 tuples (95%) done (elapsed 8.02 s, remaining 0.42 s)
+9600000 of 10000000 tuples (96%) done (elapsed 8.11 s, remaining 0.34 s)
+9700000 of 10000000 tuples (97%) done (elapsed 8.19 s, remaining 0.25 s)
+9800000 of 10000000 tuples (98%) done (elapsed 8.27 s, remaining 0.17 s)
+9900000 of 10000000 tuples (99%) done (elapsed 8.36 s, remaining 0.08 s)
+10000000 of 10000000 tuples (100%) done (elapsed 8.44 s, remaining 0.00 s)
+vacuum...
+set primary keys...
+done.
+
+test_pg_dbwa_stat_generate: pg_dbwa_test_new
+
+SELECT pg_stat_statements_reset();
+ pg_stat_statements_reset 
+--------------------------
+ 
+(1 row)
+
+pgbench --rate=10 --client=10 --time=60 --report-latencies pg_dbwa_test_new
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 616
+latency average: 10.999 ms
+latency stddev: 9.378 ms
+rate limit schedule lag: avg 0.136 (max 0.710) ms
+tps = 10.266633 (including connections establishing)
+tps = 10.266959 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.007531	\set nbranches 1 * :scale
+	0.001341	\set ntellers 10 * :scale
+	0.000981	\set naccounts 100000 * :scale
+	0.002411	\setrandom aid 1 :naccounts
+	0.001174	\setrandom bid 1 :nbranches
+	0.001084	\setrandom tid 1 :ntellers
+	0.001209	\setrandom delta -5000 5000
+	0.145308	BEGIN;
+	0.403362	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.263662	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.322856	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	0.299859	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.236622	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	9.161068	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+pgbench --rate=15 --client=10 --time=60 --report-latencies pg_dbwa_test_new
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 878
+latency average: 11.040 ms
+latency stddev: 10.035 ms
+rate limit schedule lag: avg 0.114 (max 1.450) ms
+tps = 14.631682 (including connections establishing)
+tps = 14.632268 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.006896	\set nbranches 1 * :scale
+	0.001260	\set ntellers 10 * :scale
+	0.000951	\set naccounts 100000 * :scale
+	0.002270	\setrandom aid 1 :naccounts
+	0.001104	\setrandom bid 1 :nbranches
+	0.001024	\setrandom tid 1 :ntellers
+	0.001108	\setrandom delta -5000 5000
+	0.145654	BEGIN;
+	0.398541	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.271597	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.347141	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	0.310664	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.241048	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	9.181104	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+pgbench --rate=20 --client=10 --time=60 --report-latencies pg_dbwa_test_new
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 1222
+latency average: 11.419 ms
+latency stddev: 9.544 ms
+rate limit schedule lag: avg 0.096 (max 0.375) ms
+tps = 20.366615 (including connections establishing)
+tps = 20.367310 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.007060	\set nbranches 1 * :scale
+	0.001255	\set ntellers 10 * :scale
+	0.000907	\set naccounts 100000 * :scale
+	0.002187	\setrandom aid 1 :naccounts
+	0.001093	\setrandom bid 1 :nbranches
+	0.001016	\setrandom tid 1 :ntellers
+	0.001080	\setrandom delta -5000 5000
+	0.144329	BEGIN;
+	0.395029	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.265256	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.331347	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	0.309091	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.234308	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	9.613589	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+pgbench --rate=25 --client=10 --time=60 --report-latencies pg_dbwa_test_new
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 1514
+latency average: 11.690 ms
+latency stddev: 10.839 ms
+rate limit schedule lag: avg 0.090 (max 0.292) ms
+tps = 25.233260 (including connections establishing)
+tps = 25.234058 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.006562	\set nbranches 1 * :scale
+	0.001229	\set ntellers 10 * :scale
+	0.000927	\set naccounts 100000 * :scale
+	0.002165	\setrandom aid 1 :naccounts
+	0.001081	\setrandom bid 1 :nbranches
+	0.001049	\setrandom tid 1 :ntellers
+	0.001085	\setrandom delta -5000 5000
+	0.141631	BEGIN;
+	0.380621	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.264914	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.310053	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	0.320202	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.233022	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	9.921057	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+pgbench --rate=30 --client=10 --time=60 --report-latencies pg_dbwa_test_new
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 1780
+latency average: 45.133 ms
+latency stddev: 418.032 ms
+rate limit schedule lag: avg 0.087 (max 2.893) ms
+tps = 27.628405 (including connections establishing)
+tps = 27.629192 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.007143	\set nbranches 1 * :scale
+	0.001312	\set ntellers 10 * :scale
+	0.000985	\set naccounts 100000 * :scale
+	0.002281	\setrandom aid 1 :naccounts
+	0.001078	\setrandom bid 1 :nbranches
+	0.001028	\setrandom tid 1 :ntellers
+	0.001098	\setrandom delta -5000 5000
+	0.143261	BEGIN;
+	0.381289	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.257399	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.300497	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	0.390208	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.225356	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	43.318428	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+
+test_pg_dbwa_stat_generate: pg_dbwa_test_new
+
+SELECT pg_stat_statements_reset();
+ pg_stat_statements_reset 
+--------------------------
+ 
+(1 row)
+
+pgbench --rate=10 --client=10 --time=60 --report-latencies pg_dbwa_test_new
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 627
+latency average: 419.277 ms
+latency stddev: 1301.797 ms
+rate limit schedule lag: avg 305.232 (max 5726.111) ms
+tps = 10.449962 (including connections establishing)
+tps = 10.450348 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.007367	\set nbranches 1 * :scale
+	0.001305	\set ntellers 10 * :scale
+	0.000967	\set naccounts 100000 * :scale
+	0.002238	\setrandom aid 1 :naccounts
+	0.001065	\setrandom bid 1 :nbranches
+	0.001003	\setrandom tid 1 :ntellers
+	0.001065	\setrandom delta -5000 5000
+	0.160115	BEGIN;
+	0.768231	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.277525	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.317167	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	8.475228	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.243890	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	103.772461	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+pgbench --rate=15 --client=10 --time=60 --report-latencies pg_dbwa_test_new
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 898
+latency average: 702.103 ms
+latency stddev: 1560.113 ms
+rate limit schedule lag: avg 561.911 (max 5923.179) ms
+tps = 14.966639 (including connections establishing)
+tps = 14.967153 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.006350	\set nbranches 1 * :scale
+	0.001243	\set ntellers 10 * :scale
+	0.000867	\set naccounts 100000 * :scale
+	0.001952	\setrandom aid 1 :naccounts
+	0.000998	\setrandom bid 1 :nbranches
+	0.000970	\setrandom tid 1 :ntellers
+	0.000999	\setrandom delta -5000 5000
+	0.153939	BEGIN;
+	0.419771	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.270836	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	5.453342	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	8.126169	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.229706	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	125.512692	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+pgbench --rate=20 --client=10 --time=60 --report-latencies pg_dbwa_test_new
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 1206
+latency average: 11.278 ms
+latency stddev: 9.880 ms
+rate limit schedule lag: avg 0.092 (max 0.357) ms
+tps = 20.099949 (including connections establishing)
+tps = 20.100640 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.007702	\set nbranches 1 * :scale
+	0.001376	\set ntellers 10 * :scale
+	0.000966	\set naccounts 100000 * :scale
+	0.002199	\setrandom aid 1 :naccounts
+	0.001158	\setrandom bid 1 :nbranches
+	0.001059	\setrandom tid 1 :ntellers
+	0.001131	\setrandom delta -5000 5000
+	0.137264	BEGIN;
+	0.389796	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.241343	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.271313	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	0.275045	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.210971	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	9.629842	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+pgbench --rate=25 --client=10 --time=60 --report-latencies pg_dbwa_test_new
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 1469
+latency average: 12.302 ms
+latency stddev: 12.190 ms
+rate limit schedule lag: avg 0.090 (max 0.321) ms
+tps = 24.481394 (including connections establishing)
+tps = 24.482142 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.007165	\set nbranches 1 * :scale
+	0.001293	\set ntellers 10 * :scale
+	0.000916	\set naccounts 100000 * :scale
+	0.002246	\setrandom aid 1 :naccounts
+	0.001140	\setrandom bid 1 :nbranches
+	0.001011	\setrandom tid 1 :ntellers
+	0.001067	\setrandom delta -5000 5000
+	0.142036	BEGIN;
+	0.381209	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.256323	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.290538	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	0.374615	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.222500	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	10.515447	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+pgbench --rate=30 --client=10 --time=60 --report-latencies pg_dbwa_test_new
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 1685
+latency average: 47.799 ms
+latency stddev: 455.765 ms
+rate limit schedule lag: avg 0.134 (max 45.589) ms
+tps = 27.251020 (including connections establishing)
+tps = 27.251897 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.007094	\set nbranches 1 * :scale
+	0.001358	\set ntellers 10 * :scale
+	0.000983	\set naccounts 100000 * :scale
+	0.002164	\setrandom aid 1 :naccounts
+	0.001103	\setrandom bid 1 :nbranches
+	0.000992	\setrandom tid 1 :ntellers
+	0.001094	\setrandom delta -5000 5000
+	0.140968	BEGIN;
+	0.383601	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.252212	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.305757	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	0.304948	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.220691	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	46.027147	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+
+test_pg_dbwa_stat_check: pg_dbwa_test_new
+
+SELECT
+    count(*) AS total,
+    count(*) FILTER (WHERE stat_status = 'C') AS successfully,
+    count(*) FILTER (WHERE stat_status != 'C') AS failure
+FROM dbwa.stat_history;
+ total | successfully | failure 
+-------+--------------+---------
+    20 |           20 |       0
+(1 row)
+
+SUCCESSFULLY
+
+test_pg_dbwa_show_top_queryes: pg_dbwa_test_new local
+
+WITH range_time AS (SELECT
+    min(stat_time) AS min_time,
+    max(stat_time) AS max_time
+FROM dbwa.stat_history sh
+LEFT JOIN dbwa.cluster_config cc ON cc.clusterid = sh.clusterid
+WHERE cc.clustername = 'local')
+SELECT * FROM dbwa.show_top_queryes(
+    'local',
+    (SELECT min_time FROM range_time),
+    (SELECT max_time FROM range_time),
+    5
+);
+ clusterid | userid | dbid  |  queryid   |         first_time         |         last_time          | username |      dbname      |                             query_text                             | calls | calls_pct |    total_time    | total_time_pct |   blk_rw_time    | blk_rw_time_pct 
+-----------+--------+-------+------------+----------------------------+----------------------------+----------+------------------+--------------------------------------------------------------------+-------+-----------+------------------+----------------+------------------+-----------------
+         1 |  16384 | 39322 | 3624786771 | 2016-09-25 21:35:54.239517 | 2016-09-25 21:45:03.303368 | ams      | pg_dbwa_test_new | UPDATE pgbench_branches SET bbalance = bbalance + ? WHERE bid = ?; | 10652 |     19.99 | 7859.70899999991 |          54.18 |                0 |               0
+         1 |  16384 | 39322 |  358257584 | 2016-09-25 21:35:54.239517 | 2016-09-25 21:45:03.303368 | ams      | pg_dbwa_test_new | UPDATE pgbench_tellers SET tbalance = tbalance + ? WHERE tid = ?;  | 10652 |     19.99 | 5108.13199999997 |          35.21 |                0 |               0
+         1 |  16384 | 39322 |  427613688 | 2016-09-25 21:35:54.239517 | 2016-09-25 21:45:03.303368 | ams      | pg_dbwa_test_new | UPDATE pgbench_accounts SET abalance = abalance + ? WHERE aid = ?; | 10652 |     19.99 | 978.112000000007 |           6.74 | 198.533999999992 |           99.93
+         1 |  16384 | 39322 |  400229694 | 2016-09-25 21:35:54.239517 | 2016-09-25 21:45:03.303368 | ams      | pg_dbwa_test_new | SELECT abalance FROM pgbench_accounts WHERE aid = ?;               | 10652 |     19.99 | 214.112000000006 |           1.47 |                0 |               0
+         1 |  16384 | 39322 | 2715379623 | 2016-09-25 21:36:54.868664 | 2016-09-25 21:45:03.303368 | ams      | pg_dbwa_test_new | BEGIN;                                                            +|    12 |      0.02 |          173.887 |           1.19 |            0.018 |               0
+           |        |       |            |                            |                            |          |                  | SELECT * FROM dbwa.get_stat(?);                                   +|       |           |                  |                |                  | 
+           |        |       |            |                            |                            |          |                  | SELECT * FROM dbwa.get_stat('rlocal');                            +|       |           |                  |                |                  | 
+           |        |       |            |                            |                            |          |                  | COMMIT;                                                            |       |           |                  |                |                  | 
+(5 rows)
+
+
+test_pg_dbwa_show_stat_query: pg_dbwa_test_new local
+
+WITH range_time AS (SELECT
+    min(stat_time) AS min_time,
+    max(stat_time) AS max_time
+FROM dbwa.stat_history sh
+LEFT JOIN dbwa.cluster_config cc ON cc.clusterid = sh.clusterid
+WHERE cc.clustername = 'local'),
+query_info AS (SELECT userid, dbid, queryid FROM dbwa.show_top_queryes(
+    'local',
+    (SELECT min_time FROM range_time),
+    (SELECT max_time FROM range_time), 1)
+)
+SELECT * FROM dbwa.show_stat_query(
+    'local',
+    (SELECT userid FROM query_info),
+    (SELECT dbid FROM query_info),
+    (SELECT queryid FROM query_info),
+    (SELECT min_time FROM range_time),
+    (SELECT max_time FROM range_time)
+);
+ clusterid | userid | dbid  |  queryid   |         prev_time          |         curr_time          | calls |    total_time    | rows | shared_blks_hit | shared_blks_read | shared_blks_dirtied | shared_blks_written | local_blks_hit | local_blks_read | local_blks_dirtied | local_blks_written | temp_blks_read | temp_blks_written | blk_read_time | blk_write_time 
+-----------+--------+-------+------------+----------------------------+----------------------------+-------+------------------+------+-----------------+------------------+---------------------+---------------------+----------------+-----------------+--------------------+--------------------+----------------+-------------------+---------------+----------------
+         1 |  16384 | 39322 | 3624786771 | 2016-09-25 21:35:54.239517 | 2016-09-25 21:36:54.868664 |   878 | 38.2809999999996 |  878 |            1758 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         1 |  16384 | 39322 | 3624786771 | 2016-09-25 21:36:54.868664 | 2016-09-25 21:37:55.06264  |  1222 | 62.5270000000023 | 1222 |            2448 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         1 |  16384 | 39322 | 3624786771 | 2016-09-25 21:37:55.06264  | 2016-09-25 21:38:55.250113 |  1514 |            93.55 | 1514 |            3044 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         1 |  16384 | 39322 | 3624786771 | 2016-09-25 21:38:55.250113 | 2016-09-25 21:39:59.841657 |  1780 | 255.456999999998 | 1780 |            3579 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         1 |  16384 | 39322 | 3624786771 | 2016-09-25 21:41:00.800662 | 2016-09-25 21:42:00.965097 |   898 | 7064.67400000001 |  898 |            1842 |                0 |                   1 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         1 |  16384 | 39322 | 3624786771 | 2016-09-25 21:42:00.965097 | 2016-09-25 21:43:01.114536 |  1206 | 54.1139999999996 | 1206 |            2419 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         1 |  16384 | 39322 | 3624786771 | 2016-09-25 21:43:01.114536 | 2016-09-25 21:44:01.292432 |  1469 |   186.5539999999 | 1469 |            2951 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         1 |  16384 | 39322 | 3624786771 | 2016-09-25 21:44:01.292432 | 2016-09-25 21:45:03.303368 |  1685 |          104.552 | 1685 |            3389 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+(8 rows)
+
+
+test_pg_dbwa_show_top_queryes: pg_dbwa_test_new rlocal
+
+WITH range_time AS (SELECT
+    min(stat_time) AS min_time,
+    max(stat_time) AS max_time
+FROM dbwa.stat_history sh
+LEFT JOIN dbwa.cluster_config cc ON cc.clusterid = sh.clusterid
+WHERE cc.clustername = 'local')
+SELECT * FROM dbwa.show_top_queryes(
+    'rlocal',
+    (SELECT min_time FROM range_time),
+    (SELECT max_time FROM range_time),
+    5
+);
+ clusterid | userid | dbid  |  queryid   |         first_time         |         last_time          | username |      dbname      |                             query_text                             | calls | calls_pct |    total_time    | total_time_pct |   blk_rw_time    | blk_rw_time_pct 
+-----------+--------+-------+------------+----------------------------+----------------------------+----------+------------------+--------------------------------------------------------------------+-------+-----------+------------------+----------------+------------------+-----------------
+         2 |  16384 | 39322 | 3624786771 | 2016-09-25 21:35:54.239517 | 2016-09-25 21:45:03.303368 | ams      | pg_dbwa_test_new | UPDATE pgbench_branches SET bbalance = bbalance + ? WHERE bid = ?; | 10652 |     19.99 | 7859.70899999991 |          53.24 |                0 |               0
+         2 |  16384 | 39322 |  358257584 | 2016-09-25 21:35:54.239517 | 2016-09-25 21:45:03.303368 | ams      | pg_dbwa_test_new | UPDATE pgbench_tellers SET tbalance = tbalance + ? WHERE tid = ?;  | 10652 |     19.99 | 5108.13199999997 |           34.6 |                0 |               0
+         2 |  16384 | 39322 |  427613688 | 2016-09-25 21:35:54.239517 | 2016-09-25 21:45:03.303368 | ams      | pg_dbwa_test_new | UPDATE pgbench_accounts SET abalance = abalance + ? WHERE aid = ?; | 10652 |     19.99 | 978.112000000007 |           6.62 | 198.533999999992 |           99.89
+         2 |  16384 | 39322 | 2715379623 | 2016-09-25 21:35:54.239517 | 2016-09-25 21:45:03.303368 | ams      | pg_dbwa_test_new | BEGIN;                                                            +|    16 |      0.03 |          429.268 |            2.9 |            0.095 |            0.04
+           |        |       |            |                            |                            |          |                  | SELECT * FROM dbwa.get_stat(?);                                   +|       |           |                  |                |                  | 
+           |        |       |            |                            |                            |          |                  | SELECT * FROM dbwa.get_stat('rlocal');                            +|       |           |                  |                |                  | 
+           |        |       |            |                            |                            |          |                  | COMMIT;                                                            |       |           |                  |                |                  | 
+         2 |  16384 | 39322 |  400229694 | 2016-09-25 21:35:54.239517 | 2016-09-25 21:45:03.303368 | ams      | pg_dbwa_test_new | SELECT abalance FROM pgbench_accounts WHERE aid = ?;               | 10652 |     19.99 | 214.112000000006 |           1.45 |                0 |               0
+(5 rows)
+
+
+test_pg_dbwa_show_stat_query: pg_dbwa_test_new rlocal
+
+WITH range_time AS (SELECT
+    min(stat_time) AS min_time,
+    max(stat_time) AS max_time
+FROM dbwa.stat_history sh
+LEFT JOIN dbwa.cluster_config cc ON cc.clusterid = sh.clusterid
+WHERE cc.clustername = 'local'),
+query_info AS (SELECT userid, dbid, queryid FROM dbwa.show_top_queryes(
+    'rlocal',
+    (SELECT min_time FROM range_time),
+    (SELECT max_time FROM range_time), 1)
+)
+SELECT * FROM dbwa.show_stat_query(
+    'rlocal',
+    (SELECT userid FROM query_info),
+    (SELECT dbid FROM query_info),
+    (SELECT queryid FROM query_info),
+    (SELECT min_time FROM range_time),
+    (SELECT max_time FROM range_time)
+);
+ clusterid | userid | dbid  |  queryid   |         prev_time          |         curr_time          | calls |    total_time    | rows | shared_blks_hit | shared_blks_read | shared_blks_dirtied | shared_blks_written | local_blks_hit | local_blks_read | local_blks_dirtied | local_blks_written | temp_blks_read | temp_blks_written | blk_read_time | blk_write_time 
+-----------+--------+-------+------------+----------------------------+----------------------------+-------+------------------+------+-----------------+------------------+---------------------+---------------------+----------------+-----------------+--------------------+--------------------+----------------+-------------------+---------------+----------------
+         2 |  16384 | 39322 | 3624786771 | 2016-09-25 21:35:54.239517 | 2016-09-25 21:36:54.868664 |   878 | 38.2809999999996 |  878 |            1758 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         2 |  16384 | 39322 | 3624786771 | 2016-09-25 21:36:54.868664 | 2016-09-25 21:37:55.06264  |  1222 | 62.5270000000023 | 1222 |            2448 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         2 |  16384 | 39322 | 3624786771 | 2016-09-25 21:37:55.06264  | 2016-09-25 21:38:55.250113 |  1514 |            93.55 | 1514 |            3044 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         2 |  16384 | 39322 | 3624786771 | 2016-09-25 21:38:55.250113 | 2016-09-25 21:39:59.841657 |  1780 | 255.456999999998 | 1780 |            3579 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         2 |  16384 | 39322 | 3624786771 | 2016-09-25 21:41:00.800662 | 2016-09-25 21:42:00.965097 |   898 | 7064.67400000001 |  898 |            1842 |                0 |                   1 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         2 |  16384 | 39322 | 3624786771 | 2016-09-25 21:42:00.965097 | 2016-09-25 21:43:01.114536 |  1206 | 54.1139999999996 | 1206 |            2419 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         2 |  16384 | 39322 | 3624786771 | 2016-09-25 21:43:01.114536 | 2016-09-25 21:44:01.292432 |  1469 |   186.5539999999 | 1469 |            2951 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         2 |  16384 | 39322 | 3624786771 | 2016-09-25 21:44:01.292432 | 2016-09-25 21:45:03.303368 |  1685 |          104.552 | 1685 |            3389 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+(8 rows)
+
+
+test_db_drop: pg_dbwa_test_upd
+
+DROP DATABASE IF EXISTS pg_dbwa_test_upd;
+DROP DATABASE
+
+test_db_create: pg_dbwa_test_upd
+
+CREATE DATABASE pg_dbwa_test_upd OWNER = postgres;
+CREATE DATABASE
+
+test_ext_create: pg_dbwa_test_upd dblink
+
+CREATE EXTENSION dblink;
+CREATE EXTENSION
+
+test_ext_create: pg_dbwa_test_upd pg_stat_statements
+
+CREATE EXTENSION pg_stat_statements;
+CREATE EXTENSION
+
+test_ext_create: pg_dbwa_test_upd pg_eyes
+
+CREATE EXTENSION pg_eyes;
+CREATE EXTENSION
+
+test_ext_create: pg_dbwa_test_upd pg_prttn_tools
+
+CREATE EXTENSION pg_prttn_tools;
+CREATE EXTENSION
+
+test_ext_create_version: pg_dbwa_test_upd pg_dbwa 0.3
+
+CREATE EXTENSION pg_dbwa
+WITH VERSION '0.3';
+CREATE EXTENSION
+
+test_ext_check: pg_dbwa_test_upd pg_dbwa 0.3
+
+EXIST
+
+test_pg_dbwa_settings_check: pg_dbwa_test_upd local
+
+SELECT *
+FROM dbwa.cluster_config
+WHERE clustername = 'local';
+ clusterid | clustername |   rhost   | rport | rdbname | rusername | rpassword | enabled 
+-----------+-------------+-----------+-------+---------+-----------+-----------+---------
+         1 | local       | localhost | 5432  | dbname  | username  | password  | Y
+(1 row)
+
+SELECT co.*
+FROM dbwa.cluster_operation co
+LEFT JOIN dbwa.cluster_config cc ON co.clusterid = cc.clusterid
+WHERE cc.clustername = 'local';
+ opid | clusterid |      operation      | statopid | statop_time | statop_status | enabled 
+------+-----------+---------------------+----------+-------------+---------------+---------
+    1 |         1 | dbwa.get_statements |          |             |               | Y
+(1 row)
+
+
+test_pg_dbwa_settings_cluster_add: pg_dbwa_test_upd rlocal
+
+DO $$
+DECLARE
+
+    v_clusterid dbwa.cluster_config.clusterid%type;
+    v_sql TEXT;
+    
+BEGIN
+    v_clusterid := nextval('dbwa.clusterid_seq');
+
+    v_sql := 'INSERT INTO dbwa.cluster_config (clusterid, clustername,
+    rhost, rport, rdbname, rusername, rpassword, enabled)
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8)';
+    EXECUTE v_sql USING v_clusterid, 'rlocal', '127.0.0.1', '5432',
+        'pg_dbwa_test_new', 'dbwa', 'dbwa', 'Y';
+
+    v_sql := 'INSERT INTO dbwa.cluster_operation (opid, clusterid, operation,
+    enabled)
+    VALUES($1, $2, $3, $4)';
+    EXECUTE v_sql USING nextval('dbwa.opid_seq'), v_clusterid,
+        'dbwa.get_statements','Y';
+
+END$$;
+DO
+
+test_pg_dbwa_settings_check: pg_dbwa_test_upd rlocal
+
+SELECT *
+FROM dbwa.cluster_config
+WHERE clustername = 'rlocal';
+ clusterid | clustername |   rhost   | rport |     rdbname      | rusername | rpassword | enabled 
+-----------+-------------+-----------+-------+------------------+-----------+-----------+---------
+         2 | rlocal      | 127.0.0.1 | 5432  | pg_dbwa_test_new | dbwa      | dbwa      | Y
+(1 row)
+
+SELECT co.*
+FROM dbwa.cluster_operation co
+LEFT JOIN dbwa.cluster_config cc ON co.clusterid = cc.clusterid
+WHERE cc.clustername = 'rlocal';
+ opid | clusterid |      operation      | statopid | statop_time | statop_status | enabled 
+------+-----------+---------------------+----------+-------------+---------------+---------
+    2 |         2 | dbwa.get_statements |          |             |               | Y
+(1 row)
+
+
+test_pgbench_init: pg_dbwa_test_upd 100
+
+pgbench --initialize --scale=100 pg_dbwa_test_upd
+NOTICE:  table "pgbench_history" does not exist, skipping
+NOTICE:  table "pgbench_tellers" does not exist, skipping
+NOTICE:  table "pgbench_accounts" does not exist, skipping
+NOTICE:  table "pgbench_branches" does not exist, skipping
+creating tables...
+100000 of 10000000 tuples (1%) done (elapsed 0.07 s, remaining 7.19 s)
+200000 of 10000000 tuples (2%) done (elapsed 0.15 s, remaining 7.54 s)
+300000 of 10000000 tuples (3%) done (elapsed 0.24 s, remaining 7.61 s)
+400000 of 10000000 tuples (4%) done (elapsed 0.32 s, remaining 7.59 s)
+500000 of 10000000 tuples (5%) done (elapsed 0.40 s, remaining 7.55 s)
+600000 of 10000000 tuples (6%) done (elapsed 0.48 s, remaining 7.51 s)
+700000 of 10000000 tuples (7%) done (elapsed 0.56 s, remaining 7.46 s)
+800000 of 10000000 tuples (8%) done (elapsed 0.64 s, remaining 7.40 s)
+900000 of 10000000 tuples (9%) done (elapsed 0.72 s, remaining 7.26 s)
+1000000 of 10000000 tuples (10%) done (elapsed 0.81 s, remaining 7.25 s)
+1100000 of 10000000 tuples (11%) done (elapsed 0.89 s, remaining 7.20 s)
+1200000 of 10000000 tuples (12%) done (elapsed 0.97 s, remaining 7.10 s)
+1300000 of 10000000 tuples (13%) done (elapsed 1.05 s, remaining 7.04 s)
+1400000 of 10000000 tuples (14%) done (elapsed 1.14 s, remaining 6.98 s)
+1500000 of 10000000 tuples (15%) done (elapsed 1.22 s, remaining 6.92 s)
+1600000 of 10000000 tuples (16%) done (elapsed 1.30 s, remaining 6.83 s)
+1700000 of 10000000 tuples (17%) done (elapsed 1.38 s, remaining 6.76 s)
+1800000 of 10000000 tuples (18%) done (elapsed 1.47 s, remaining 6.69 s)
+1900000 of 10000000 tuples (19%) done (elapsed 1.55 s, remaining 6.62 s)
+2000000 of 10000000 tuples (20%) done (elapsed 1.64 s, remaining 6.56 s)
+2100000 of 10000000 tuples (21%) done (elapsed 1.72 s, remaining 6.46 s)
+2200000 of 10000000 tuples (22%) done (elapsed 1.80 s, remaining 6.39 s)
+2300000 of 10000000 tuples (23%) done (elapsed 1.89 s, remaining 6.32 s)
+2400000 of 10000000 tuples (24%) done (elapsed 1.97 s, remaining 6.23 s)
+2500000 of 10000000 tuples (25%) done (elapsed 2.05 s, remaining 6.15 s)
+2600000 of 10000000 tuples (26%) done (elapsed 2.14 s, remaining 6.08 s)
+2700000 of 10000000 tuples (27%) done (elapsed 2.22 s, remaining 6.00 s)
+2800000 of 10000000 tuples (28%) done (elapsed 2.31 s, remaining 5.93 s)
+2900000 of 10000000 tuples (29%) done (elapsed 2.38 s, remaining 5.84 s)
+3000000 of 10000000 tuples (30%) done (elapsed 2.47 s, remaining 5.76 s)
+3100000 of 10000000 tuples (31%) done (elapsed 2.55 s, remaining 5.68 s)
+3200000 of 10000000 tuples (32%) done (elapsed 2.64 s, remaining 5.60 s)
+3300000 of 10000000 tuples (33%) done (elapsed 2.71 s, remaining 5.51 s)
+3400000 of 10000000 tuples (34%) done (elapsed 2.80 s, remaining 5.43 s)
+3500000 of 10000000 tuples (35%) done (elapsed 2.88 s, remaining 5.36 s)
+3600000 of 10000000 tuples (36%) done (elapsed 2.97 s, remaining 5.28 s)
+3700000 of 10000000 tuples (37%) done (elapsed 3.06 s, remaining 5.21 s)
+3800000 of 10000000 tuples (38%) done (elapsed 3.15 s, remaining 5.14 s)
+3900000 of 10000000 tuples (39%) done (elapsed 3.24 s, remaining 5.06 s)
+4000000 of 10000000 tuples (40%) done (elapsed 3.32 s, remaining 4.99 s)
+4100000 of 10000000 tuples (41%) done (elapsed 3.40 s, remaining 4.90 s)
+4200000 of 10000000 tuples (42%) done (elapsed 3.49 s, remaining 4.82 s)
+4300000 of 10000000 tuples (43%) done (elapsed 3.58 s, remaining 4.74 s)
+4400000 of 10000000 tuples (44%) done (elapsed 3.67 s, remaining 4.67 s)
+4500000 of 10000000 tuples (45%) done (elapsed 3.75 s, remaining 4.59 s)
+4600000 of 10000000 tuples (46%) done (elapsed 3.83 s, remaining 4.50 s)
+4700000 of 10000000 tuples (47%) done (elapsed 3.92 s, remaining 4.42 s)
+4800000 of 10000000 tuples (48%) done (elapsed 4.01 s, remaining 4.34 s)
+4900000 of 10000000 tuples (49%) done (elapsed 4.10 s, remaining 4.26 s)
+5000000 of 10000000 tuples (50%) done (elapsed 4.18 s, remaining 4.18 s)
+5100000 of 10000000 tuples (51%) done (elapsed 4.27 s, remaining 4.10 s)
+5200000 of 10000000 tuples (52%) done (elapsed 4.36 s, remaining 4.02 s)
+5300000 of 10000000 tuples (53%) done (elapsed 4.44 s, remaining 3.94 s)
+5400000 of 10000000 tuples (54%) done (elapsed 5.59 s, remaining 4.76 s)
+5500000 of 10000000 tuples (55%) done (elapsed 5.69 s, remaining 4.65 s)
+5600000 of 10000000 tuples (56%) done (elapsed 5.77 s, remaining 4.54 s)
+5700000 of 10000000 tuples (57%) done (elapsed 5.86 s, remaining 4.42 s)
+5800000 of 10000000 tuples (58%) done (elapsed 5.94 s, remaining 4.30 s)
+5900000 of 10000000 tuples (59%) done (elapsed 6.02 s, remaining 4.18 s)
+6000000 of 10000000 tuples (60%) done (elapsed 6.11 s, remaining 4.07 s)
+6100000 of 10000000 tuples (61%) done (elapsed 6.20 s, remaining 3.96 s)
+6200000 of 10000000 tuples (62%) done (elapsed 6.28 s, remaining 3.85 s)
+6300000 of 10000000 tuples (63%) done (elapsed 6.37 s, remaining 3.74 s)
+6400000 of 10000000 tuples (64%) done (elapsed 6.46 s, remaining 3.63 s)
+6500000 of 10000000 tuples (65%) done (elapsed 6.55 s, remaining 3.52 s)
+6600000 of 10000000 tuples (66%) done (elapsed 6.63 s, remaining 3.41 s)
+6700000 of 10000000 tuples (67%) done (elapsed 6.71 s, remaining 3.31 s)
+6800000 of 10000000 tuples (68%) done (elapsed 6.80 s, remaining 3.20 s)
+6900000 of 10000000 tuples (69%) done (elapsed 6.88 s, remaining 3.09 s)
+7000000 of 10000000 tuples (70%) done (elapsed 6.97 s, remaining 2.99 s)
+7100000 of 10000000 tuples (71%) done (elapsed 7.05 s, remaining 2.88 s)
+7200000 of 10000000 tuples (72%) done (elapsed 7.14 s, remaining 2.78 s)
+7300000 of 10000000 tuples (73%) done (elapsed 7.23 s, remaining 2.67 s)
+7400000 of 10000000 tuples (74%) done (elapsed 7.32 s, remaining 2.57 s)
+7500000 of 10000000 tuples (75%) done (elapsed 7.39 s, remaining 2.46 s)
+7600000 of 10000000 tuples (76%) done (elapsed 7.48 s, remaining 2.36 s)
+7700000 of 10000000 tuples (77%) done (elapsed 7.56 s, remaining 2.26 s)
+7800000 of 10000000 tuples (78%) done (elapsed 7.65 s, remaining 2.16 s)
+7900000 of 10000000 tuples (79%) done (elapsed 7.74 s, remaining 2.06 s)
+8000000 of 10000000 tuples (80%) done (elapsed 7.82 s, remaining 1.96 s)
+8100000 of 10000000 tuples (81%) done (elapsed 7.91 s, remaining 1.85 s)
+8200000 of 10000000 tuples (82%) done (elapsed 7.99 s, remaining 1.75 s)
+8300000 of 10000000 tuples (83%) done (elapsed 8.07 s, remaining 1.65 s)
+8400000 of 10000000 tuples (84%) done (elapsed 8.16 s, remaining 1.55 s)
+8500000 of 10000000 tuples (85%) done (elapsed 8.25 s, remaining 1.46 s)
+8600000 of 10000000 tuples (86%) done (elapsed 8.33 s, remaining 1.36 s)
+8700000 of 10000000 tuples (87%) done (elapsed 8.42 s, remaining 1.26 s)
+8800000 of 10000000 tuples (88%) done (elapsed 8.49 s, remaining 1.16 s)
+8900000 of 10000000 tuples (89%) done (elapsed 8.58 s, remaining 1.06 s)
+9000000 of 10000000 tuples (90%) done (elapsed 8.66 s, remaining 0.96 s)
+9100000 of 10000000 tuples (91%) done (elapsed 8.74 s, remaining 0.86 s)
+9200000 of 10000000 tuples (92%) done (elapsed 8.83 s, remaining 0.77 s)
+9300000 of 10000000 tuples (93%) done (elapsed 8.92 s, remaining 0.67 s)
+9400000 of 10000000 tuples (94%) done (elapsed 9.01 s, remaining 0.57 s)
+9500000 of 10000000 tuples (95%) done (elapsed 9.09 s, remaining 0.48 s)
+9600000 of 10000000 tuples (96%) done (elapsed 9.18 s, remaining 0.38 s)
+9700000 of 10000000 tuples (97%) done (elapsed 9.27 s, remaining 0.29 s)
+9800000 of 10000000 tuples (98%) done (elapsed 9.36 s, remaining 0.19 s)
+9900000 of 10000000 tuples (99%) done (elapsed 9.44 s, remaining 0.10 s)
+10000000 of 10000000 tuples (100%) done (elapsed 9.53 s, remaining 0.00 s)
+vacuum...
+set primary keys...
+done.
+
+test_pg_dbwa_stat_generate: pg_dbwa_test_upd
+
+SELECT pg_stat_statements_reset();
+ pg_stat_statements_reset 
+--------------------------
+ 
+(1 row)
+
+pgbench --rate=10 --client=10 --time=60 --report-latencies pg_dbwa_test_upd
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 574
+latency average: 11.977 ms
+latency stddev: 12.383 ms
+rate limit schedule lag: avg 0.139 (max 0.586) ms
+tps = 9.566643 (including connections establishing)
+tps = 9.567012 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.007880	\set nbranches 1 * :scale
+	0.001247	\set ntellers 10 * :scale
+	0.000969	\set naccounts 100000 * :scale
+	0.002310	\setrandom aid 1 :naccounts
+	0.001075	\setrandom bid 1 :nbranches
+	0.000981	\setrandom tid 1 :ntellers
+	0.001042	\setrandom delta -5000 5000
+	0.145908	BEGIN;
+	0.414702	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.253343	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.307578	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	0.288207	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.228387	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	10.169803	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+pgbench --rate=15 --client=10 --time=60 --report-latencies pg_dbwa_test_upd
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 852
+latency average: 14.327 ms
+latency stddev: 26.430 ms
+rate limit schedule lag: avg 0.106 (max 0.413) ms
+tps = 14.199945 (including connections establishing)
+tps = 14.200598 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.008585	\set nbranches 1 * :scale
+	0.001478	\set ntellers 10 * :scale
+	0.000978	\set naccounts 100000 * :scale
+	0.002435	\setrandom aid 1 :naccounts
+	0.001163	\setrandom bid 1 :nbranches
+	0.001102	\setrandom tid 1 :ntellers
+	0.001095	\setrandom delta -5000 5000
+	0.138299	BEGIN;
+	0.399568	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.233884	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.298802	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	0.267919	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.209033	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	12.642171	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+pgbench --rate=20 --client=10 --time=60 --report-latencies pg_dbwa_test_upd
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 1186
+latency average: 11.809 ms
+latency stddev: 13.127 ms
+rate limit schedule lag: avg 0.097 (max 4.943) ms
+tps = 19.766605 (including connections establishing)
+tps = 19.767242 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.007746	\set nbranches 1 * :scale
+	0.001302	\set ntellers 10 * :scale
+	0.000997	\set naccounts 100000 * :scale
+	0.002304	\setrandom aid 1 :naccounts
+	0.001111	\setrandom bid 1 :nbranches
+	0.001028	\setrandom tid 1 :ntellers
+	0.001085	\setrandom delta -5000 5000
+	0.140479	BEGIN;
+	0.395515	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.250156	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.317171	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	0.392980	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.219588	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	9.965464	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+pgbench --rate=25 --client=10 --time=60 --report-latencies pg_dbwa_test_upd
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 1518
+latency average: 18.099 ms
+latency stddev: 35.865 ms
+rate limit schedule lag: avg 0.362 (max 140.975) ms
+tps = 25.299925 (including connections establishing)
+tps = 25.300741 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.007688	\set nbranches 1 * :scale
+	0.001342	\set ntellers 10 * :scale
+	0.000922	\set naccounts 100000 * :scale
+	0.002186	\setrandom aid 1 :naccounts
+	0.001153	\setrandom bid 1 :nbranches
+	0.001002	\setrandom tid 1 :ntellers
+	0.001051	\setrandom delta -5000 5000
+	0.132474	BEGIN;
+	0.367544	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.224338	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.253053	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	0.268581	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.197256	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	16.265567	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+pgbench --rate=30 --client=10 --time=60 --report-latencies pg_dbwa_test_upd
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 1855
+latency average: 14.639 ms
+latency stddev: 24.227 ms
+rate limit schedule lag: avg 0.366 (max 122.031) ms
+tps = 30.916571 (including connections establishing)
+tps = 30.917526 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.008309	\set nbranches 1 * :scale
+	0.001325	\set ntellers 10 * :scale
+	0.001006	\set naccounts 100000 * :scale
+	0.002398	\setrandom aid 1 :naccounts
+	0.001174	\setrandom bid 1 :nbranches
+	0.000956	\setrandom tid 1 :ntellers
+	0.001031	\setrandom delta -5000 5000
+	0.132594	BEGIN;
+	0.365030	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.213381	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.246892	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	0.460068	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.186182	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	12.640404	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+
+test_pg_dbwa_stat_check: pg_dbwa_test_upd
+
+SELECT
+    count(*) AS total,
+    count(*) FILTER (WHERE stat_status = 'C') AS successfully,
+    count(*) FILTER (WHERE stat_status != 'C') AS failure
+FROM dbwa.stat_history;
+ total | successfully | failure 
+-------+--------------+---------
+    10 |           10 |       0
+(1 row)
+
+SUCCESSFULLY
+
+test_ext_update: pg_dbwa_test_upd pg_dbwa
+
+ALTER EXTENSION pg_dbwa UPDATE;
+ALTER EXTENSION
+
+test_ext_check: pg_dbwa_test_upd pg_dbwa 0.3.1
+
+EXIST
+
+test_pg_dbwa_stat_generate: pg_dbwa_test_upd
+
+SELECT pg_stat_statements_reset();
+ pg_stat_statements_reset 
+--------------------------
+ 
+(1 row)
+
+pgbench --rate=10 --client=10 --time=60 --report-latencies pg_dbwa_test_upd
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 615
+latency average: 1222.338 ms
+latency stddev: 2528.197 ms
+rate limit schedule lag: avg 938.363 (max 9968.393) ms
+tps = 10.249974 (including connections establishing)
+tps = 10.250324 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.007141	\set nbranches 1 * :scale
+	0.001255	\set ntellers 10 * :scale
+	0.000946	\set naccounts 100000 * :scale
+	0.002102	\setrandom aid 1 :naccounts
+	0.001102	\setrandom bid 1 :nbranches
+	0.000935	\setrandom tid 1 :ntellers
+	0.001054	\setrandom delta -5000 5000
+	0.166392	BEGIN;
+	23.968088	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.276294	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	9.364055	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	5.026346	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.233772	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	244.912616	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+pgbench --rate=15 --client=10 --time=60 --report-latencies pg_dbwa_test_upd
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 923
+latency average: 126.481 ms
+latency stddev: 421.322 ms
+rate limit schedule lag: avg 58.012 (max 1835.256) ms
+tps = 15.383291 (including connections establishing)
+tps = 15.383794 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.006984	\set nbranches 1 * :scale
+	0.001271	\set ntellers 10 * :scale
+	0.000899	\set naccounts 100000 * :scale
+	0.002207	\setrandom aid 1 :naccounts
+	0.001098	\setrandom bid 1 :nbranches
+	0.001007	\setrandom tid 1 :ntellers
+	0.001076	\setrandom delta -5000 5000
+	0.149726	BEGIN;
+	1.663225	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.268601	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.309207	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	4.980026	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.235867	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	60.833541	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+pgbench --rate=20 --client=10 --time=60 --report-latencies pg_dbwa_test_upd
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 1180
+latency average: 12.766 ms
+latency stddev: 16.097 ms
+rate limit schedule lag: avg 0.096 (max 0.372) ms
+tps = 19.666606 (including connections establishing)
+tps = 19.667199 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.007711	\set nbranches 1 * :scale
+	0.001319	\set ntellers 10 * :scale
+	0.000989	\set naccounts 100000 * :scale
+	0.002378	\setrandom aid 1 :naccounts
+	0.001196	\setrandom bid 1 :nbranches
+	0.000982	\setrandom tid 1 :ntellers
+	0.001131	\setrandom delta -5000 5000
+	0.142405	BEGIN;
+	0.386614	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.246029	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.282114	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	0.358383	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.217225	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	11.006626	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+pgbench --rate=25 --client=10 --time=60 --report-latencies pg_dbwa_test_upd
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 1522
+latency average: 13.783 ms
+latency stddev: 20.140 ms
+rate limit schedule lag: avg 0.093 (max 4.753) ms
+tps = 25.366590 (including connections establishing)
+tps = 25.367329 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.007442	\set nbranches 1 * :scale
+	0.001327	\set ntellers 10 * :scale
+	0.000940	\set naccounts 100000 * :scale
+	0.002234	\setrandom aid 1 :naccounts
+	0.001104	\setrandom bid 1 :nbranches
+	0.001015	\setrandom tid 1 :ntellers
+	0.001066	\setrandom delta -5000 5000
+	0.145507	BEGIN;
+	0.388875	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.253964	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.285565	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	0.505557	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.221076	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	11.859979	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+pgbench --rate=30 --client=10 --time=60 --report-latencies pg_dbwa_test_upd
+starting vacuum...end.
+transaction type: TPC-B (sort of)
+scaling factor: 100
+query mode: simple
+number of clients: 10
+number of threads: 1
+duration: 60 s
+number of transactions actually processed: 1775
+latency average: 35.634 ms
+latency stddev: 320.039 ms
+rate limit schedule lag: avg 0.092 (max 16.547) ms
+tps = 27.000703 (including connections establishing)
+tps = 27.001566 (excluding connections establishing)
+statement latencies in milliseconds:
+	0.006920	\set nbranches 1 * :scale
+	0.001250	\set ntellers 10 * :scale
+	0.000945	\set naccounts 100000 * :scale
+	0.002257	\setrandom aid 1 :naccounts
+	0.001028	\setrandom bid 1 :nbranches
+	0.000986	\setrandom tid 1 :ntellers
+	0.001037	\setrandom delta -5000 5000
+	0.139398	BEGIN;
+	0.380868	UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+	0.251537	SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+	0.292472	UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+	2.639777	UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+	0.220320	INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+	31.588025	END;
+BEGIN;
+SELECT * FROM dbwa.get_stat('local');
+SELECT * FROM dbwa.get_stat('rlocal');
+COMMIT;
+COMMIT
+
+test_pg_dbwa_stat_check: pg_dbwa_test_upd
+
+SELECT
+    count(*) AS total,
+    count(*) FILTER (WHERE stat_status = 'C') AS successfully,
+    count(*) FILTER (WHERE stat_status != 'C') AS failure
+FROM dbwa.stat_history;
+ total | successfully | failure 
+-------+--------------+---------
+    20 |           20 |       0
+(1 row)
+
+SUCCESSFULLY
+
+test_pg_dbwa_show_top_queryes: pg_dbwa_test_upd local
+
+WITH range_time AS (SELECT
+    min(stat_time) AS min_time,
+    max(stat_time) AS max_time
+FROM dbwa.stat_history sh
+LEFT JOIN dbwa.cluster_config cc ON cc.clusterid = sh.clusterid
+WHERE cc.clustername = 'local')
+SELECT * FROM dbwa.show_top_queryes(
+    'local',
+    (SELECT min_time FROM range_time),
+    (SELECT max_time FROM range_time),
+    5
+);
+ clusterid | userid | dbid  |  queryid   |         first_time         |         last_time          | username |      dbname      |                             query_text                             | calls | calls_pct |    total_time    | total_time_pct |   blk_rw_time   | blk_rw_time_pct 
+-----------+--------+-------+------------+----------------------------+----------------------------+----------+------------------+--------------------------------------------------------------------+-------+-----------+------------------+----------------+-----------------+-----------------
+         1 |  16384 | 39606 | 2474661625 | 2016-09-25 21:46:56.540083 | 2016-09-25 21:56:04.999142 | ams      | pg_dbwa_test_upd | UPDATE pgbench_branches SET bbalance = bbalance + ? WHERE bid = ?; | 10811 |     19.99 | 9932.87699999979 |          75.99 |               0 |               0
+         1 |  16384 | 39606 | 1564192024 | 2016-09-25 21:46:56.540083 | 2016-09-25 21:56:04.999142 | ams      | pg_dbwa_test_upd | UPDATE pgbench_accounts SET abalance = abalance + ? WHERE aid = ?; | 10811 |     19.99 |  2159.2519999997 |          16.51 | 1365.8470000003 |           99.98
+         1 |  16384 | 39606 | 3639564987 | 2016-09-25 21:46:56.540083 | 2016-09-25 21:56:04.999142 | ams      | pg_dbwa_test_upd | UPDATE pgbench_tellers SET tbalance = tbalance + ? WHERE tid = ?;  | 10811 |     19.99 | 429.739000000032 |           3.28 |               0 |               0
+         1 |  16384 | 39606 |   30954455 | 2016-09-25 21:46:56.540083 | 2016-09-25 21:56:04.999142 | ams      | pg_dbwa_test_upd | SELECT abalance FROM pgbench_accounts WHERE aid = ?;               | 10811 |     19.99 | 205.466000000006 |           1.57 |               0 |               0
+         1 |  16384 | 39606 | 1862364105 | 2016-09-25 21:47:57.624138 | 2016-09-25 21:56:04.999142 | ams      | pg_dbwa_test_upd | BEGIN;                                                            +|    12 |      0.02 |          173.285 |           1.32 |           0.018 |               0
+           |        |       |            |                            |                            |          |                  | SELECT * FROM dbwa.get_stat(?);                                   +|       |           |                  |                |                 | 
+           |        |       |            |                            |                            |          |                  | SELECT * FROM dbwa.get_stat('rlocal');                            +|       |           |                  |                |                 | 
+           |        |       |            |                            |                            |          |                  | COMMIT;                                                            |       |           |                  |                |                 | 
+(5 rows)
+
+
+test_pg_dbwa_show_stat_query: pg_dbwa_test_upd local
+
+WITH range_time AS (SELECT
+    min(stat_time) AS min_time,
+    max(stat_time) AS max_time
+FROM dbwa.stat_history sh
+LEFT JOIN dbwa.cluster_config cc ON cc.clusterid = sh.clusterid
+WHERE cc.clustername = 'local'),
+query_info AS (SELECT userid, dbid, queryid FROM dbwa.show_top_queryes(
+    'local',
+    (SELECT min_time FROM range_time),
+    (SELECT max_time FROM range_time), 1)
+)
+SELECT * FROM dbwa.show_stat_query(
+    'local',
+    (SELECT userid FROM query_info),
+    (SELECT dbid FROM query_info),
+    (SELECT queryid FROM query_info),
+    (SELECT min_time FROM range_time),
+    (SELECT max_time FROM range_time)
+);
+ clusterid | userid | dbid  |  queryid   |         prev_time          |         curr_time          | calls |    total_time    | rows | shared_blks_hit | shared_blks_read | shared_blks_dirtied | shared_blks_written | local_blks_hit | local_blks_read | local_blks_dirtied | local_blks_written | temp_blks_read | temp_blks_written | blk_read_time | blk_write_time 
+-----------+--------+-------+------------+----------------------------+----------------------------+-------+------------------+------+-----------------+------------------+---------------------+---------------------+----------------+-----------------+--------------------+--------------------+----------------+-------------------+---------------+----------------
+         1 |  16384 | 39606 | 2474661625 | 2016-09-25 21:46:56.540083 | 2016-09-25 21:47:57.624138 |   852 | 32.8719999999997 |  852 |            1705 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         1 |  16384 | 39606 | 2474661625 | 2016-09-25 21:47:57.624138 | 2016-09-25 21:48:57.810235 |  1186 |          181.068 | 1186 |            2394 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         1 |  16384 | 39606 | 2474661625 | 2016-09-25 21:48:57.810235 | 2016-09-25 21:49:57.976931 |  1518 |  79.443999999999 | 1518 |            3046 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         1 |  16384 | 39606 | 2474661625 | 2016-09-25 21:49:57.976931 | 2016-09-25 21:50:58.127534 |  1855 | 489.212999999994 | 1855 |            3732 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         1 |  16384 | 39606 | 2474661625 | 2016-09-25 21:51:58.576149 | 2016-09-25 21:52:58.742609 |   923 | 4353.88799999997 |  923 |            2539 |                1 |                   5 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         1 |  16384 | 39606 | 2474661625 | 2016-09-25 21:52:58.742609 | 2016-09-25 21:53:58.902001 |  1180 |  140.81399999996 | 1180 |            3554 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         1 |  16384 | 39606 | 2474661625 | 2016-09-25 21:53:58.902001 | 2016-09-25 21:54:59.073628 |  1522 |  401.71899999994 | 1522 |            4585 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         1 |  16384 | 39606 | 2474661625 | 2016-09-25 21:54:59.073628 | 2016-09-25 21:56:04.999142 |  1775 | 4253.85899999993 | 1775 |            5339 |                0 |                   1 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+(8 rows)
+
+
+test_pg_dbwa_show_top_queryes: pg_dbwa_test_upd rlocal
+
+WITH range_time AS (SELECT
+    min(stat_time) AS min_time,
+    max(stat_time) AS max_time
+FROM dbwa.stat_history sh
+LEFT JOIN dbwa.cluster_config cc ON cc.clusterid = sh.clusterid
+WHERE cc.clustername = 'local')
+SELECT * FROM dbwa.show_top_queryes(
+    'rlocal',
+    (SELECT min_time FROM range_time),
+    (SELECT max_time FROM range_time),
+    5
+);
+ clusterid | userid | dbid  |  queryid   |         first_time         |         last_time          | username |      dbname      |                             query_text                             | calls | calls_pct |    total_time    | total_time_pct |   blk_rw_time   | blk_rw_time_pct 
+-----------+--------+-------+------------+----------------------------+----------------------------+----------+------------------+--------------------------------------------------------------------+-------+-----------+------------------+----------------+-----------------+-----------------
+         2 |  16384 | 39606 | 2474661625 | 2016-09-25 21:46:56.540083 | 2016-09-25 21:56:04.999142 | ams      | pg_dbwa_test_upd | UPDATE pgbench_branches SET bbalance = bbalance + ? WHERE bid = ?; | 10811 |     19.99 | 9932.87699999979 |          72.88 |               0 |               0
+         2 |  16384 | 39606 | 1564192024 | 2016-09-25 21:46:56.540083 | 2016-09-25 21:56:04.999142 | ams      | pg_dbwa_test_upd | UPDATE pgbench_accounts SET abalance = abalance + ? WHERE aid = ?; | 10811 |     19.99 |  2159.2519999997 |          15.84 | 1365.8470000003 |           99.98
+         2 |  16384 | 39606 | 1862364105 | 2016-09-25 21:46:56.540083 | 2016-09-25 21:56:04.999142 | ams      | pg_dbwa_test_upd | BEGIN;                                                            +|    16 |      0.02 |          730.406 |           5.35 |           0.115 |               0
+           |        |       |            |                            |                            |          |                  | SELECT * FROM dbwa.get_stat(?);                                   +|       |           |                  |                |                 | 
+           |        |       |            |                            |                            |          |                  | SELECT * FROM dbwa.get_stat('rlocal');                            +|       |           |                  |                |                 | 
+           |        |       |            |                            |                            |          |                  | COMMIT;                                                            |       |           |                  |                |                 | 
+         2 |  16384 | 39606 | 3639564987 | 2016-09-25 21:46:56.540083 | 2016-09-25 21:56:04.999142 | ams      | pg_dbwa_test_upd | UPDATE pgbench_tellers SET tbalance = tbalance + ? WHERE tid = ?;  | 10811 |     19.99 | 429.739000000032 |           3.15 |               0 |               0
+         2 |  16384 | 39606 |   30954455 | 2016-09-25 21:46:56.540083 | 2016-09-25 21:56:04.999142 | ams      | pg_dbwa_test_upd | SELECT abalance FROM pgbench_accounts WHERE aid = ?;               | 10811 |     19.99 | 205.466000000006 |            1.5 |               0 |               0
+(5 rows)
+
+
+test_pg_dbwa_show_stat_query: pg_dbwa_test_upd rlocal
+
+WITH range_time AS (SELECT
+    min(stat_time) AS min_time,
+    max(stat_time) AS max_time
+FROM dbwa.stat_history sh
+LEFT JOIN dbwa.cluster_config cc ON cc.clusterid = sh.clusterid
+WHERE cc.clustername = 'local'),
+query_info AS (SELECT userid, dbid, queryid FROM dbwa.show_top_queryes(
+    'rlocal',
+    (SELECT min_time FROM range_time),
+    (SELECT max_time FROM range_time), 1)
+)
+SELECT * FROM dbwa.show_stat_query(
+    'rlocal',
+    (SELECT userid FROM query_info),
+    (SELECT dbid FROM query_info),
+    (SELECT queryid FROM query_info),
+    (SELECT min_time FROM range_time),
+    (SELECT max_time FROM range_time)
+);
+ clusterid | userid | dbid  |  queryid   |         prev_time          |         curr_time          | calls |    total_time    | rows | shared_blks_hit | shared_blks_read | shared_blks_dirtied | shared_blks_written | local_blks_hit | local_blks_read | local_blks_dirtied | local_blks_written | temp_blks_read | temp_blks_written | blk_read_time | blk_write_time 
+-----------+--------+-------+------------+----------------------------+----------------------------+-------+------------------+------+-----------------+------------------+---------------------+---------------------+----------------+-----------------+--------------------+--------------------+----------------+-------------------+---------------+----------------
+         2 |  16384 | 39606 | 2474661625 | 2016-09-25 21:46:56.540083 | 2016-09-25 21:47:57.624138 |   852 | 32.8719999999997 |  852 |            1705 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         2 |  16384 | 39606 | 2474661625 | 2016-09-25 21:47:57.624138 | 2016-09-25 21:48:57.810235 |  1186 |          181.068 | 1186 |            2394 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         2 |  16384 | 39606 | 2474661625 | 2016-09-25 21:48:57.810235 | 2016-09-25 21:49:57.976931 |  1518 |  79.443999999999 | 1518 |            3046 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         2 |  16384 | 39606 | 2474661625 | 2016-09-25 21:49:57.976931 | 2016-09-25 21:50:58.127534 |  1855 | 489.212999999994 | 1855 |            3732 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         2 |  16384 | 39606 | 2474661625 | 2016-09-25 21:51:58.576149 | 2016-09-25 21:52:58.742609 |   923 | 4353.88799999997 |  923 |            2539 |                1 |                   5 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         2 |  16384 | 39606 | 2474661625 | 2016-09-25 21:52:58.742609 | 2016-09-25 21:53:58.902001 |  1180 |  140.81399999996 | 1180 |            3554 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         2 |  16384 | 39606 | 2474661625 | 2016-09-25 21:53:58.902001 | 2016-09-25 21:54:59.073628 |  1522 |  401.71899999994 | 1522 |            4585 |                0 |                   0 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+         2 |  16384 | 39606 | 2474661625 | 2016-09-25 21:54:59.073628 | 2016-09-25 21:56:04.999142 |  1775 | 4253.85899999993 | 1775 |            5339 |                0 |                   1 |                   0 |              0 |               0 |                  0 |                  0 |              0 |                 0 |             0 |              0
+(8 rows)
+
